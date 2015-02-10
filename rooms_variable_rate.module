@@ -1,0 +1,94 @@
+<?php
+
+/**
+ * @file
+ * Hooks and API functions for Rooms Variable Rate module.
+ */
+
+include_once 'rooms_variable_rate.field.inc';
+
+define('ROOMS_VARIABLE_RATE_DISCOUNT', 'discount');
+define('ROOMS_VARIABLE_RATE_FLAT_RATE', 'flat_rate');
+
+/**
+ * Implements hook_menu_alter().
+ */
+function rooms_variable_rate_menu_alter(&$items) {
+  // Disables Bulk pricing management feature.
+  unset($items['admin/rooms/units/bulk_pricing_management']);
+  // Disables Pricing calendar output.
+  unset($items['rooms/units/unit/%rooms_unit/pricing/json/%/%']);
+
+  // Edit unit access pricing management.
+  $items['admin/rooms/units/unit/%rooms_unit/pricing'] = array(
+    'title' => 'Manage Pricing',
+    'page callback' => 'rooms_pricing_page',
+    'page arguments' => array(4, 6, 7),
+    'access callback' => 'rooms_unit_access',
+    'access arguments' => array('update pricing', 4),
+    'type' => MENU_LOCAL_TASK,
+    'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
+    'weight' => '30',
+  );
+}
+
+/**
+ * Implements hook_element_info().
+ */
+function rooms_variable_rate_element_info() {
+  $elements = array();
+  $elements['rooms_variable_rate'] = array(
+    '#input' => TRUE,
+    '#process' => array('rooms_variable_rate_process'),
+  );
+  return $elements;
+}
+
+/**
+ * Generates the 'rooms_variable_rate' Form API element.
+ */
+function rooms_variable_rate_process($element, $form_state, $complete_form) {
+
+  $element['minimum_stay'] = array(
+    '#title' => t('Minimum stay'),
+    '#title_display' => 'invisible',
+    '#type' => 'textfield',
+    '#field_prefix' => '<strong>' . t('If booking longer than') . '</strong>',
+    '#field_suffix' => t('days'),
+    '#size' => 2,
+    '#default_value' => isset($element['#value']['minimum_stay']) ? $element['#value']['minimum_stay'] : '',
+    '#element_validate' => array('element_validate_integer_positive'),
+  );
+
+  $element['maximum_stay'] = array(
+    '#title' => t('Maximum stay'),
+    '#title_display' => 'invisible',
+    '#type' => 'textfield',
+    '#field_prefix' => '<strong>' . t('and booking shorter than') . '</strong>',
+    '#field_suffix' => t('days'),
+    '#size' => 2,
+    '#default_value' => isset($element['#value']['maximum_stay']) ? $element['#value']['maximum_stay'] : '',
+    '#element_validate' => array('element_validate_integer_positive'),
+  );
+
+  $element['rate_type'] = array(
+    '#type' => 'select',
+    '#options' => array(
+      ROOMS_VARIABLE_RATE_DISCOUNT => t('Discount (%)'),
+      ROOMS_VARIABLE_RATE_FLAT_RATE => t('Flat rate'),
+    ),
+    '#default_value' => isset($element['#value']['rate_type']) ? $element['#value']['rate_type'] : '',
+    '#field_prefix' => '<strong>' . t('provide') . '</strong>',
+  );
+
+  $element['value'] = array(
+    '#title' => t('Value'),
+    '#title_display' => 'invisible',
+    '#type' => 'textfield',
+    '#size' => 2,
+    '#default_value' => isset($element['#value']['value']) ? $element['#value']['value'] : '',
+    '#element_validate' => array('element_validate_integer_positive'),
+  );
+
+  return $element;
+}

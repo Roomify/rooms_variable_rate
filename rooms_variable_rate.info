@@ -1,0 +1,7 @@
+name = Rooms Variable Rate
+description = Creates variable pricing rates for Rooms.
+core = 7.x
+
+package = Roomify
+
+dependencies[] = rooms_pricing

@@ -1,0 +1,41 @@
+<?php
+
+/**
+ * @file
+ * Install, schema and update hooks for Rooms Variable Rate module.
+ */
+
+/**
+ * Implements hook_field_schema().
+ */
+function rooms_variable_rate_field_schema($field) {
+  if ($field['type'] == 'rooms_variable_rate') {
+    return array(
+      'columns' => array(
+        'rate_type' => array(
+          'type' => 'varchar',
+          'length' => 20,
+          'not null' => TRUE,
+        ),
+        'value' => array(
+          'type' => 'int',
+          'not null' => FALSE,
+        ),
+        'minimum_stay' => array(
+          'type' => 'int',
+          'not null' => FALSE,
+        ),
+        'maximum_stay' => array(
+          'type' => 'int',
+          'not null' => FALSE,
+        ),
+      ),
+      'indexes' => array(
+        'stay' => array(
+          'minimum_stay',
+          'maximum_stay',
+        ),
+      ),
+    );
+  }
+}
