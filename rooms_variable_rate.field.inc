@@ -88,7 +88,7 @@ function rooms_variable_rate_data_property_info($name = NULL) {
  */
 function rooms_variable_rate_field_validate($entity_type, $entity, $field, $instance, $langcode, $items, &$errors) {
   foreach ($items as $delta => $item) {
-    if ($item['value'] <= 0 || $item['minimum_stay'] <= 0 || $item['maximum_stay'] <= 0) {
+    if ((is_numeric($item['value']) && $item['value'] <= 0) || (is_numeric($item['minimum_stay']) && $item['minimum_stay'] <= 0) || (is_numeric($item['maximum_stay']) && $item['maximum_stay'] <= 0)) {
       $errors[$field['field_name']][$langcode][$delta][] = array(
         'error' => 'rooms_variable_rate_negative',
         'message' => t('%name: Values must be integer positive.', array('%name' => $instance['label'])),
@@ -134,25 +134,7 @@ function rooms_variable_rate_field_widget_form(&$form, &$form_state, $field, $in
       '#type' => 'rooms_variable_rate',
       '#default_value' => isset($items[$delta]) ? $items[$delta] : '',
     );
-
-    if ($field['cardinality'] == FIELD_CARDINALITY_UNLIMITED) {
-      $element['remove'] = array(
-        '#type' => 'submit',
-        '#value' => t('Remove'),
-        '#weight' => 100,
-        '#attributes' => array(
-          'class' => array('rooms-availability-range--remove-button'),
-        ),
-        '#attached' => array(
-          'js' => array(
-            drupal_get_path('module', 'rooms_availability_constraints') . '/js/rooms_availability_constraints_range.js',
-          ),
-          'css' => array(
-            drupal_get_path('module', 'rooms_availability_constraints') . '/css/rooms_availability_constraints_range.css',
-          ),
-        ),
-      );
-    }
-    return $element;
   }
+  
+  return $element;
 }
