@@ -20,7 +20,7 @@ function rooms_variable_rate_element_info() {
 /**
  * Generates the 'rooms_variable_rate' Form API element.
  */
-function rooms_variable_rate_element_process($element, $form_state = array(), $complete_form) {
+function rooms_variable_rate_element_process($element, $form_state, $complete_form) {
   $element['minimum_stay'] = array(
     '#title' => t('Minimum stay'),
     '#title_display' => 'invisible',
@@ -68,5 +68,18 @@ function rooms_variable_rate_element_process($element, $form_state = array(), $c
     '#suffix' => '</div>',
   );
 
+  $element['#element_validate'] = array('rooms_variable_rate_element_validate');
+
   return $element;
+}
+
+/**
+ * Validate handler for 'rooms_variable_rate' form element.
+ */
+function rooms_variable_rate_element_validate($element, &$form_state) {
+  $value = $element['#value'];
+  if ($value['minimum_stay'] > $value['maximum_stay']) {
+    $name = empty($element['#title']) ? t('Variable Rate') : $element['#title'];
+    form_error($element, t("%name: Minimum booking period can\'t be greater than maximum.", array('%name' => $name)));
+  }
 }

@@ -87,12 +87,31 @@ function rooms_variable_rate_data_property_info($name = NULL) {
  * Implements hook_field_validate().
  */
 function rooms_variable_rate_field_validate($entity_type, $entity, $field, $instance, $langcode, $items, &$errors) {
+  $range = array();
   foreach ($items as $delta => $item) {
     if ((is_numeric($item['value']) && $item['value'] <= 0) || (is_numeric($item['minimum_stay']) && $item['minimum_stay'] <= 0) || (is_numeric($item['maximum_stay']) && $item['maximum_stay'] <= 0)) {
       $errors[$field['field_name']][$langcode][$delta][] = array(
         'error' => 'rooms_variable_rate_negative',
         'message' => t('%name: Values must be integer positive.', array('%name' => $instance['label'])),
       );
+    }
+
+    if (is_numeric($item['minimum_stay']) && is_numeric($item['maximum_stay'])) {
+      if ($item['minimum_stay'] > $item['maximum_stay']) {
+        $errors[$field['field_name']][$langcode][$delta][] = array(
+          'error' => 'rooms_variable_rate_invalid ',
+          'message' => t("%name: Minimum booking period can\'t be greater than maximum.", array('%name' => $instance['label'])),
+        );
+      }
+
+      $item_range = range($item['minimum_stay'], ($item['maximum_stay'] - 1));
+      if (count(array_intersect($range, $item_range))) {
+        $errors[$field['field_name']][$langcode][$delta][] = array(
+          'error' => 'rooms_variable_rate_intersect',
+          'message' => t('%name: Period values are overlapped.', array('%name' => $instance['label'])),
+        );
+      }
+      $range = array_merge($range, $item_range);
     }
   }
 }

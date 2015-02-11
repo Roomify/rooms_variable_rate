@@ -55,6 +55,21 @@ function rooms_variable_rate_pricing_form($form, &$form_state, $unit) {
 }
 
 /**
+ * Rooms Variable Rate form validate callback.
+ */
+function rooms_variable_rate_pricing_form_validate(&$form, &$form_state) {
+  $unit = $form_state['rooms_unit'];
+
+  // Notify field widgets to validate their data.
+  field_attach_form_validate('rooms_unit', $unit, $form, $form_state);
+
+  // Validate price field.
+  if (!empty($form_state['values']['base_price']) && !is_numeric($form_state['values']['base_price'])) {
+    form_set_error('base_price', t('%name: you must enter a numeric value for the price.', array('%name' => t('Base price'))));
+  }
+}
+
+/**
  * Rooms Variable Rate form submit callback.
  */
 function rooms_variable_rate_pricing_form_submit($form, &$form_state) {
