@@ -11,6 +11,28 @@ define('ROOMS_VARIABLE_RATE_DISCOUNT', 'discount');
 define('ROOMS_VARIABLE_RATE_FLAT_RATE', 'flat_rate');
 
 /**
+ * Implements hook_menu().
+ */
+function rooms_variable_rate_menu() {
+  $items = array();
+
+  // Edit unit access pricing management.
+  $items['admin/rooms/units/unit/%rooms_unit/variable_rate'] = array(
+    'title' => 'Manage Variable Pricing',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('rooms_variable_rate_pricing_form', 4),
+    'access callback' => 'rooms_unit_access',
+    'access arguments' => array('update pricing', 4),
+    'type' => MENU_LOCAL_TASK,
+    'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
+    'weight' => '30',
+    'file' => 'rooms_variable_rate.pages.inc',
+  );
+
+  return $items;
+}
+
+/**
  * Implements hook_menu_alter().
  */
 function rooms_variable_rate_menu_alter(&$items) {
@@ -18,18 +40,8 @@ function rooms_variable_rate_menu_alter(&$items) {
   unset($items['admin/rooms/units/bulk_pricing_management']);
   // Disables Pricing calendar output.
   unset($items['rooms/units/unit/%rooms_unit/pricing/json/%/%']);
-
-  // Edit unit access pricing management.
-  $items['admin/rooms/units/unit/%rooms_unit/pricing'] = array(
-    'title' => 'Manage Pricing',
-    'page callback' => 'rooms_pricing_page',
-    'page arguments' => array(4, 6, 7),
-    'access callback' => 'rooms_unit_access',
-    'access arguments' => array('update pricing', 4),
-    'type' => MENU_LOCAL_TASK,
-    'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
-    'weight' => '30',
-  );
+  // Disables default Manage Pricing tab.
+  unset($items['admin/rooms/units/unit/%rooms_unit/pricing']);
 }
 
 /**
@@ -164,5 +176,14 @@ function rooms_variable_rate_create_field() {
     );
 
     field_create_field($field);
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter() for rooms_unit_edit_form().
+ */
+function rooms_variable_rate_form_rooms_unit_edit_form_alter(&$form, &$form_state) {
+  if (isset($form['rooms_variable_rate'])) {
+    $form['rooms_variable_rate']['#access'] = FALSE;
   }
 }
