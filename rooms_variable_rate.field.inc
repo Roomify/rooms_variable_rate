@@ -139,3 +139,67 @@ function rooms_variable_rate_field_widget_form(&$form, &$form_state, $field, $in
 
   return $element;
 }
+
+/*****************************************************
+ ***************** AUX FUNCTIONS *********************
+ ****************************************************/
+
+/**
+ * Creates the Rooms variable Rate field instance.
+ *
+ * @param string $entity_type
+ *   The entity type to attach the field instance.
+ * @param string $bundle
+ *   The specific bundle to attach the field instance.
+ */
+function rooms_variable_rate_create_instance($entity_type, $bundle) {
+  rooms_variable_rate_create_field();
+  if (field_read_instance($entity_type, ROOMS_VARIABLE_RATE_FIELD_NAME, $bundle) === FALSE) {
+    $instance = array(
+      'label' => 'Variable Rate',
+      'widget' => array(
+        'weight' => '1',
+        'type' => 'rooms_variable_rate',
+        'module' => 'rooms_variable_rate',
+        'active' => 0,
+        'settings' => array(),
+      ),
+      'settings' => array(
+        'user_register_form' => FALSE,
+      ),
+      'display' => array(
+        'default' => array(
+          'label' => 'above',
+          'type' => 'rooms_variable_rate',
+          'settings' => array(),
+          'module' => NULL,
+          'weight' => 1,
+        ),
+      ),
+      'required' => 0,
+      'description' => '',
+      'default_value' => NULL,
+      'field_name' => ROOMS_VARIABLE_RATE_FIELD_NAME,
+      'entity_type' => $entity_type,
+      'bundle' => $bundle,
+    );
+    field_create_instance($instance);
+  }
+}
+
+/**
+ * Creates the default Rooms Variable Rate field.
+ */
+function rooms_variable_rate_create_field() {
+  if (field_read_field(ROOMS_VARIABLE_RATE_FIELD_NAME) === FALSE) {
+    $field = array(
+      'settings' => array(),
+      'field_name' => ROOMS_VARIABLE_RATE_FIELD_NAME,
+      'type' => 'rooms_variable_rate',
+      'cardinality' => FIELD_CARDINALITY_UNLIMITED,
+      'locked' => '1',
+    );
+
+    field_create_field($field);
+  }
+}

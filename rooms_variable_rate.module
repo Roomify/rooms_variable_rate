@@ -5,6 +5,7 @@
  * Hooks and API functions for Rooms Variable Rate module.
  */
 
+include_once 'rooms_variable_rate.elements.inc';
 include_once 'rooms_variable_rate.field.inc';
 
 define('ROOMS_VARIABLE_RATE_DISCOUNT', 'discount');
@@ -37,146 +38,55 @@ function rooms_variable_rate_menu() {
  * Implements hook_menu_alter().
  */
 function rooms_variable_rate_menu_alter(&$items) {
-  // Disables Bulk pricing management feature.
-  unset($items['admin/rooms/units/bulk_pricing_management']);
-  // Disables Pricing calendar output.
-  unset($items['rooms/units/unit/%rooms_unit/pricing/json/%/%']);
-  // Disables default Manage Pricing tab.
-  unset($items['admin/rooms/units/unit/%rooms_unit/pricing']);
+  // Overrides Bulk pricing management page callback.
+  $items['admin/rooms/units/bulk_pricing_management']['page callback'] = 'rooms_variable_rate_bulk_pricing_management';
+  $items['admin/rooms/units/bulk_pricing_management']['file'] = 'rooms_variable_rate.pages.inc';
+  $items['admin/rooms/units/bulk_pricing_management']['file path'] = drupal_get_path('module', 'rooms_variable_rate');
+  $items['admin/rooms/units/bulk_pricing_management']['module'] = 'rooms_variable_rate';
+  // Changes Pricing calendar output access callback.
+  $items['rooms/units/unit/%rooms_unit/pricing/json/%/%']['access callback'] = 'rooms_variable_rate_pricing_access';
+  // Changes default Manage Pricing tab access callback.
+  $items['admin/rooms/units/unit/%rooms_unit/pricing']['access callback'] = 'rooms_variable_rate_pricing_access';
 }
 
 /**
- * Implements hook_entity_insert().
- */
-function rooms_variable_rate_entity_insert($entity, $type) {
-  if ($type == 'rooms_unit_type') {
-    rooms_variable_rate_create_instance('rooms_unit', $entity->type);
-  }
-}
-
-/**
- * Implements hook_element_info().
- */
-function rooms_variable_rate_element_info() {
-  $elements = array();
-  $elements['rooms_variable_rate'] = array(
-    '#input' => TRUE,
-    '#process' => array('rooms_variable_rate_process'),
-  );
-  return $elements;
-}
-
-/**
- * Generates the 'rooms_variable_rate' Form API element.
- */
-function rooms_variable_rate_process($element, $form_state = array(), $complete_form = array()) {
-  $element['minimum_stay'] = array(
-    '#title' => t('Minimum stay'),
-    '#title_display' => 'invisible',
-    '#type' => 'textfield',
-    '#field_prefix' => '<strong>' . t('If booking longer than') . '</strong>',
-    '#field_suffix' => t('days'),
-    '#size' => 2,
-    '#default_value' => isset($element['#value']['minimum_stay']) ? $element['#value']['minimum_stay'] : '',
-    '#element_validate' => array('element_validate_integer_positive'),
-    '#weight' => 0,
-  );
-
-  $element['maximum_stay'] = array(
-    '#title' => t('Maximum stay'),
-    '#title_display' => 'invisible',
-    '#type' => 'textfield',
-    '#field_prefix' => '<strong>' . t('and booking shorter than') . '</strong>',
-    '#field_suffix' => t('days'),
-    '#size' => 2,
-    '#default_value' => isset($element['#value']['maximum_stay']) ? $element['#value']['maximum_stay'] : '',
-    '#element_validate' => array('element_validate_integer_positive'),
-    '#weight' => 1,
-  );
-
-  $element['rate_type'] = array(
-    '#type' => 'select',
-    '#options' => array(
-      ROOMS_VARIABLE_RATE_DISCOUNT => t('Discount (%)'),
-      ROOMS_VARIABLE_RATE_FLAT_RATE => t('Flat rate'),
-    ),
-    '#default_value' => isset($element['#value']['rate_type']) ? $element['#value']['rate_type'] : '',
-    '#field_prefix' => '<strong>' . t('provide') . '</strong>',
-    '#weight' => 2,
-    '#prefix' => '<div class="container-inline">',
-  );
-
-  $element['value'] = array(
-    '#title' => t('Value'),
-    '#title_display' => 'invisible',
-    '#type' => 'textfield',
-    '#size' => 2,
-    '#default_value' => isset($element['#value']['value']) ? $element['#value']['value'] : '',
-    '#element_validate' => array('element_validate_integer_positive'),
-    '#weight' => 3,
-    '#suffix' => '</div>',
-  );
-
-  return $element;
-}
-
-/**
- * Creates the Rooms variable Rate field instance.
+ * Specific access callback for manage pricing tab based on Rooms Variable Rate.
  *
- * @param string $entity_type
- *   The entity type to attach the field instance.
- * @param string $bundle
- *   The specific bundle to attach the field instance.
+ * @param string $operation
+ *   The operation to perform.
+ * @param RoomsUnit $unit
+ *   The unit to perform the operation.
+ *
+ * @return bool
+ *   If the user has access to the or not.
  */
-function rooms_variable_rate_create_instance($entity_type, $bundle) {
-  rooms_variable_rate_create_field();
-  if (field_read_instance($entity_type, ROOMS_VARIABLE_RATE_FIELD_NAME, $bundle) === FALSE) {
-    $instance = array(
-      'label' => 'Variable Rate',
-      'widget' => array(
-        'weight' => '1',
-        'type' => 'rooms_variable_rate',
-        'module' => 'rooms_variable_rate',
-        'active' => 0,
-        'settings' => array(),
-      ),
-      'settings' => array(
-        'user_register_form' => FALSE,
-      ),
-      'display' => array(
-        'default' => array(
-          'label' => 'above',
-          'type' => 'rooms_variable_rate',
-          'settings' => array(),
-          'module' => NULL,
-          'weight' => 1,
-        ),
-      ),
-      'required' => 0,
-      'description' => '',
-      'default_value' => NULL,
-      'field_name' => ROOMS_VARIABLE_RATE_FIELD_NAME,
-      'entity_type' => $entity_type,
-      'bundle' => $bundle,
-    );
-    field_create_instance($instance);
+function rooms_variable_rate_pricing_access($operation, $unit) {
+  if (variable_get('rooms_variable_rate_disable_pricing_' . $unit->type, 0)) {
+    return FALSE;
   }
+  return rooms_unit_access($operation, $unit);
 }
 
 /**
- * Creates the default Rooms Variable Rate field.
+ * Implements hook_rooms_rooms_booking_amount_before_modifiers_alter().
  */
-function rooms_variable_rate_create_field() {
-  if (field_read_field(ROOMS_VARIABLE_RATE_FIELD_NAME) === FALSE) {
-    $field = array(
-      'settings' => array(),
-      'field_name' => ROOMS_VARIABLE_RATE_FIELD_NAME,
-      'type' => 'rooms_variable_rate',
-      'cardinality' => FIELD_CARDINALITY_UNLIMITED,
-      'locked' => '1',
-    );
-
-    field_create_field($field);
+function rooms_variable_rate_rooms_booking_amount_before_modifiers_alter(&$price, $booking_data) {
+  if ($rates = field_get_items('rooms_unit', $booking_data['unit'], ROOMS_VARIABLE_RATE_FIELD_NAME)) {
+    $period = $booking_data['start_date']->diff($booking_data['end_date'])->days + 1;
+    if (variable_get('rooms_variable_rate_disable_pricing_' . $booking_data['unit']->type, 0)) {
+      $price = $period * $booking_data['unit']->base_price;
+    }
+    $period = $booking_data['start_date']->diff($booking_data['end_date'])->days + 1;
+    foreach ($rates as $rate) {
+      if ($rate['minimum_stay'] <= $period && $rate['maximum_stay'] > $period) {
+        if ($rate['rate_type'] == ROOMS_VARIABLE_RATE_DISCOUNT) {
+          $price = $price * (100 - $rate['value']) / 100;
+        }
+        else {
+          $price = $rate['value'] * $period;
+        }
+      }
+    }
   }
 }
 
@@ -190,20 +100,62 @@ function rooms_variable_rate_form_rooms_unit_edit_form_alter(&$form, &$form_stat
 }
 
 /**
- * Implements hook_rooms_rooms_booking_amount_before_modifiers_alter().
+ * Implements hook_form_FORM_ID_alter() for rooms_unit_type_form().
  */
-function rooms_variable_rate_rooms_booking_amount_before_modifiers_alter(&$price, $booking_data) {
-  if ($rates = field_get_items('rooms_unit', $booking_data['unit'], ROOMS_VARIABLE_RATE_FIELD_NAME)) {
-    $period = $booking_data['start_date']->diff($booking_data['end_date'])->days + 1;
-    foreach ($rates as $rate) {
-      if ($rate['minimum_stay'] <= $period && $rate['maximum_stay'] > $period) {
-        if ($rate['rate_type'] == ROOMS_VARIABLE_RATE_DISCOUNT) {
-          $price = $price * (100 - $rate['value']) /100;
-        }
-        else {
-          $price = $rate['value'] * $period;
-        }
-      }
-    }
+function rooms_variable_rate_form_rooms_unit_type_form_alter(&$form, &$form_state, $form_id) {
+  $unit_type = $form_state['rooms_unit_type'];
+  // Unit availability information for administrators.
+  $form['variable_rate'] = array(
+    '#type' => 'fieldset',
+    '#group' => 'additional_settings',
+    '#title' => t('Rooms Variable Rate'),
+    '#tree' => FALSE,
+    '#weight' => 80,
+    '#attributes' => array(
+      'class' => array('unit-type-form-variable-rate'),
+    ),
+    '#attached' => array(
+      'js' => array(drupal_get_path('module', 'rooms_variable_rate') . '/js/rooms_variable_rate_tab.js'),
+    ),
+  );
+
+  $form['variable_rate']['rooms_variable_rate_per_unit'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Enable availability variable per unit'),
+    '#default_value' => variable_get('rooms_variable_rate_unit_' . $unit_type->type, 0),
+    '#description' => t('This will allow you to define variable pricing rates for each unit of this type. If you disable this feature, all the stored data will be removed'),
+  );
+
+  $form['variable_rate']['rooms_variable_rate_disable_core_pricing'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Disable default Rooms pricing calendar'),
+    '#default_value' => variable_get('rooms_variable_rate_disable_pricing_' . $unit_type->type, 0),
+    '#description' => t('This will allow you to disable the default rooms pricing calendar for units of this type. Only base price will be taken into account'),
+  );
+
+  $form['#submit'][] = 'rooms_variable_rate_rooms_unit_type_form_submit';
+}
+
+/**
+ * Custom submit handler for rooms_unit_type_form.
+ */
+function rooms_variable_rate_rooms_unit_type_form_submit($form, &$form_state) {
+  $unit_type = $form_state['rooms_unit_type'];
+
+  if (variable_get('rooms_variable_rate_unit_' . $unit_type->type, 0) == 0
+    && $form_state['values']['rooms_variable_rate_per_unit'] == 1) {
+    rooms_variable_rate_create_instance('rooms_unit', $unit_type->type);
   }
+  elseif (variable_get('rooms_variable_rate_unit_' . $unit_type->type, 0) == 1
+    && $form_state['values']['rooms_variable_rate_per_unit'] == 0) {
+    field_delete_instance(array(
+      'field_name' => ROOMS_VARIABLE_RATE_FIELD_NAME,
+      'entity_type' => 'rooms_unit',
+      'bundle' => $unit_type->type,
+    ));
+  }
+
+  variable_set('menu_rebuild_needed', TRUE);
+  variable_set('rooms_variable_rate_unit_' . $unit_type->type, $form_state['values']['rooms_variable_rate_per_unit']);
+  variable_set('rooms_variable_rate_disable_pricing_' . $unit_type->type, $form_state['values']['rooms_variable_rate_disable_core_pricing']);
 }
