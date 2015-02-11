@@ -188,3 +188,22 @@ function rooms_variable_rate_form_rooms_unit_edit_form_alter(&$form, &$form_stat
     $form[ROOMS_VARIABLE_RATE_FIELD_NAME]['#access'] = FALSE;
   }
 }
+
+/**
+ * Implements hook_rooms_rooms_booking_amount_before_modifiers_alter().
+ */
+function rooms_variable_rate_rooms_booking_amount_before_modifiers_alter(&$price, $booking_data) {
+  if ($rates = field_get_items('rooms_unit', $booking_data['unit'], ROOMS_VARIABLE_RATE_FIELD_NAME)) {
+    $period = $booking_data['start_date']->diff($booking_data['end_date'])->days + 1;
+    foreach ($rates as $rate) {
+      if ($rate['minimum_stay'] <= $period && $rate['maximum_stay'] > $period) {
+        if ($rate['rate_type'] == ROOMS_VARIABLE_RATE_DISCOUNT) {
+          $price = $price * (100 - $rate['value']) /100;
+        }
+        else {
+          $price = $rate['value'] * $period;
+        }
+      }
+    }
+  }
+}
