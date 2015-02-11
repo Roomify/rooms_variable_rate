@@ -12,7 +12,7 @@ function rooms_variable_rate_element_info() {
   $elements = array();
   $elements['rooms_variable_rate'] = array(
     '#input' => TRUE,
-    '#process' => array('rooms_variable_rate_process'),
+    '#process' => array('rooms_variable_rate_element_process'),
   );
   return $elements;
 }
@@ -20,7 +20,7 @@ function rooms_variable_rate_element_info() {
 /**
  * Generates the 'rooms_variable_rate' Form API element.
  */
-function rooms_variable_rate_process($element, $form_state = array(), $complete_form = array()) {
+function rooms_variable_rate_element_process($element, $form_state = array(), $complete_form) {
   $element['minimum_stay'] = array(
     '#title' => t('Minimum stay'),
     '#title_display' => 'invisible',

@@ -38,14 +38,14 @@ function rooms_variable_rate_menu() {
  * Implements hook_menu_alter().
  */
 function rooms_variable_rate_menu_alter(&$items) {
-  // Overrides Bulk pricing management page callback.
+  // Override Bulk pricing management page callback.
   $items['admin/rooms/units/bulk_pricing_management']['page callback'] = 'rooms_variable_rate_bulk_pricing_management';
   $items['admin/rooms/units/bulk_pricing_management']['file'] = 'rooms_variable_rate.pages.inc';
   $items['admin/rooms/units/bulk_pricing_management']['file path'] = drupal_get_path('module', 'rooms_variable_rate');
   $items['admin/rooms/units/bulk_pricing_management']['module'] = 'rooms_variable_rate';
-  // Changes Pricing calendar output access callback.
+  // Change Pricing calendar output access callback.
   $items['rooms/units/unit/%rooms_unit/pricing/json/%/%']['access callback'] = 'rooms_variable_rate_pricing_access';
-  // Changes default Manage Pricing tab access callback.
+  // Change default Manage Pricing tab access callback.
   $items['admin/rooms/units/unit/%rooms_unit/pricing']['access callback'] = 'rooms_variable_rate_pricing_access';
 }
 
