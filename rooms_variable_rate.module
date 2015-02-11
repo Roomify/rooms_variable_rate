@@ -9,6 +9,7 @@ include_once 'rooms_variable_rate.field.inc';
 
 define('ROOMS_VARIABLE_RATE_DISCOUNT', 'discount');
 define('ROOMS_VARIABLE_RATE_FLAT_RATE', 'flat_rate');
+define('ROOMS_VARIABLE_RATE_FIELD_NAME', 'rooms_variable_rate');
 
 /**
  * Implements hook_menu().
@@ -129,7 +130,7 @@ function rooms_variable_rate_process($element, $form_state = array(), $complete_
  */
 function rooms_variable_rate_create_instance($entity_type, $bundle) {
   rooms_variable_rate_create_field();
-  if (field_read_instance($entity_type, 'rooms_variable_rate', $bundle) === FALSE) {
+  if (field_read_instance($entity_type, ROOMS_VARIABLE_RATE_FIELD_NAME, $bundle) === FALSE) {
     $instance = array(
       'label' => 'Variable Rate',
       'widget' => array(
@@ -154,7 +155,7 @@ function rooms_variable_rate_create_instance($entity_type, $bundle) {
       'required' => 0,
       'description' => '',
       'default_value' => NULL,
-      'field_name' => 'rooms_variable_rate',
+      'field_name' => ROOMS_VARIABLE_RATE_FIELD_NAME,
       'entity_type' => $entity_type,
       'bundle' => $bundle,
     );
@@ -166,10 +167,10 @@ function rooms_variable_rate_create_instance($entity_type, $bundle) {
  * Creates the default Rooms Variable Rate field.
  */
 function rooms_variable_rate_create_field() {
-  if (field_read_field('rooms_variable_rate') === FALSE) {
+  if (field_read_field(ROOMS_VARIABLE_RATE_FIELD_NAME) === FALSE) {
     $field = array(
       'settings' => array(),
-      'field_name' => 'rooms_variable_rate',
+      'field_name' => ROOMS_VARIABLE_RATE_FIELD_NAME,
       'type' => 'rooms_variable_rate',
       'cardinality' => FIELD_CARDINALITY_UNLIMITED,
       'locked' => '1',
@@ -183,7 +184,7 @@ function rooms_variable_rate_create_field() {
  * Implements hook_form_FORM_ID_alter() for rooms_unit_edit_form().
  */
 function rooms_variable_rate_form_rooms_unit_edit_form_alter(&$form, &$form_state) {
-  if (isset($form['rooms_variable_rate'])) {
-    $form['rooms_variable_rate']['#access'] = FALSE;
+  if (isset($form[ROOMS_VARIABLE_RATE_FIELD_NAME])) {
+    $form[ROOMS_VARIABLE_RATE_FIELD_NAME]['#access'] = FALSE;
   }
 }

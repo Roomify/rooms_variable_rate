@@ -27,7 +27,7 @@ function rooms_variable_rate_pricing_form($form, &$form_state, $unit) {
 
   // Hide undesired fields.
   foreach ($instances as $name => $instance) {
-    if ($name != 'rooms_variable_rate') {
+    if ($name != ROOMS_VARIABLE_RATE_FIELD_NAME) {
       $form[$name]['#access'] = FALSE;
     }
   }
