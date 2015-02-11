@@ -6,6 +6,14 @@
  */
 
 /**
+ * Implements hook_install().
+ */
+function rooms_variable_rate_install() {
+  field_info_cache_clear();
+  rooms_variable_rate_create_field();
+}
+
+/**
  * Implements hook_field_schema().
  */
 function rooms_variable_rate_field_schema($field) {

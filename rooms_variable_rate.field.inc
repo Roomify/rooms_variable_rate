@@ -110,6 +110,7 @@ function rooms_variable_rate_field_is_empty($item, $field) {
 /*****************************************************
  **************** WIDGET FUNCTIONS *******************
  ****************************************************/
+
 /**
  * Implements hook_field_widget_info().
  */
@@ -135,6 +136,6 @@ function rooms_variable_rate_field_widget_form(&$form, &$form_state, $field, $in
       '#default_value' => isset($items[$delta]) ? $items[$delta] : '',
     );
   }
-  
+
   return $element;
 }
