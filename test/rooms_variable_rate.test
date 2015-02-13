@@ -1,0 +1,231 @@
+<?php
+
+/**
+ * @file
+ * Definition of ViewsHandlerFilterDateTest.
+ */
+
+/**
+ * Tests the core views_handler_filter_date handler.
+ */
+class RoomsVariableRateTest extends DrupalWebTestCase {
+
+  protected $unit_type;
+  protected $unit;
+
+  public static function getInfo() {
+    return array(
+      'name' => 'Rooms Variable Rate',
+      'description' => 'Test the variable rate pricing for Rooms.',
+      'group' => 'Rooms Variable Rate',
+    );
+  }
+
+  function setUp() {
+    parent::setUp('rooms_variable_rate', 'rooms_booking_manager');
+    variable_set('rooms_price_calculation', ROOMS_PER_NIGHT);
+    variable_set('rooms_presentation_style', ROOMS_INDIVIDUAL);
+    $this->privileged_user = $this->drupalCreateUser(array(
+      'administer rooms_unit_type entities',
+      'administer rooms_unit entities',
+      'bypass rooms_unit entities access',
+      'administer rooms_unit pricing',
+    ));
+    $this->drupalLogin($this->privileged_user);
+    $this->createTestUnit();
+  }
+
+  public function testRoomsVariableRateUI() {
+    //Nothing enabled, so default behavior.
+    $this->drupalGet('admin/rooms/units');
+    $this->assertNoLink('Manage Variable Pricing');
+    $this->assertLink('Manage Pricing');
+    $this->drupalGet('admin/rooms/units/unit/' . $this->unit->unit_id . '/edit');
+    $this->assertNoLink('Manage Variable Pricing');
+    $this->assertLink('Manage Pricing');
+
+    $this->switchVariableRate();
+
+    // Both enabled.
+    $this->drupalGet('admin/rooms/units');
+    $this->assertLink('Manage Variable Pricing');
+    $this->assertLink('Manage Pricing');
+    $this->drupalGet('admin/rooms/units/unit/' . $this->unit->unit_id . '/edit');
+    $this->assertLink('Manage Variable Pricing');
+    $this->assertLink('Manage Pricing');
+
+    $this->switchDefaultPricing();
+
+    // Variable enabled and default disabled.
+    $this->drupalGet('admin/rooms/units');
+    $this->assertLink('Manage Variable Pricing');
+    $this->assertNoLink('Manage Pricing');
+    $this->drupalGet('admin/rooms/units/unit/' . $this->unit->unit_id . '/edit');
+    $this->assertLink('Manage Variable Pricing');
+    $this->assertNoLink('Manage Pricing');
+
+    $this->switchVariableRate(FALSE);
+
+    // Both disabled.
+    $this->drupalGet('admin/rooms/units');
+    $this->assertNoLink('Manage Variable Pricing');
+    $this->assertNoLink('Manage Pricing');
+    $this->drupalGet('admin/rooms/units/unit/' . $this->unit->unit_id . '/edit');
+    $this->assertNoLink('Manage Variable Pricing');
+    $this->assertNoLink('Manage Pricing');
+  }
+
+  public function testRoomsDiscountVariableRate() {
+    $type = ROOMS_VARIABLE_RATE_DISCOUNT;
+    $expected_variable_price = 135;
+    $expected_price = 400;
+    $this->_testVariableRate($type, $expected_variable_price, $expected_price);
+  }
+
+  public function testRoomsFlatVariableRate() {
+    $type = ROOMS_VARIABLE_RATE_FLAT_RATE;
+    $expected_variable_price = 30;
+    $expected_price = 400;
+    $this->_testVariableRate($type, $expected_variable_price, $expected_price);
+  }
+
+  public function testRoomsDiscountVariableRateWithoutPricing() {
+    $type = ROOMS_VARIABLE_RATE_DISCOUNT;
+    $expected_variable_price = 270;
+    $expected_price = 800;
+    $this->_testVariableRate($type, $expected_variable_price, $expected_price, TRUE);
+  }
+
+  public function testRoomsFlatVariableRateWithoutPricing() {
+    $type = ROOMS_VARIABLE_RATE_FLAT_RATE;
+    $expected_variable_price = 30;
+    $expected_price = 800;
+    $this->_testVariableRate($type, $expected_variable_price, $expected_price, TRUE);
+  }
+
+  protected function createTestUnit() {
+    // Create a random unit type.
+    $this->unit_type = drupal_strtolower($this->randomName());
+    $unit_type = rooms_unit_type_create(array(
+      'type' => $this->unit_type,
+      'label' => $this->unit_type,
+      'min_sleeps' => 1,
+      'max_sleeps' => 2,
+      'base_price' => 100,
+    ));
+    $unit_type->save();
+
+    // Create a unit of this type.
+    $unit = rooms_unit_create(array(
+      'type' => $this->unit_type,
+      'name' => $this->randomName(),
+      'default_state' => 1,
+      'min_sleeps' => 1,
+      'max_sleeps' => 2,
+      'base_price' => 100,
+    ));
+    $unit->save();
+    $this->unit = $unit;
+  }
+
+  /**
+   */
+  protected function switchVariableRate($value = TRUE) {
+  // Go to the edit unit type page to enable the Variable rate functionality.
+    //$this->drupalGet('admin/rooms/units/unit-types/manage/' . $this->unit_type);
+    $edit = array(
+      'rooms_variable_rate_per_unit' => $value,
+    );
+    $this->drupalPost('admin/rooms/units/unit-types/manage/' . $this->unit_type, $edit, 'Save unit type');
+  }
+
+  /**
+   */
+  protected function switchDefaultPricing($value = TRUE) {
+    // Go to the edit unit type page to enable the Variable rate functionality.
+    //$this->drupalGet('admin/rooms/units/unit-types/manage/' . $this->unit_type);
+    $edit = array(
+      'rooms_variable_rate_disable_core_pricing' => $value,
+    );
+    $this->drupalPost('admin/rooms/units/unit-types/manage/' . $this->unit_type, $edit, 'Save unit type');
+  }
+
+  /**
+   * @param $startdate
+   * @param $enddate
+   */
+  protected function searchAvailability($startdate, $enddate) {
+    $edit = array(
+      'rooms_start_date[date]' => $startdate->format('d/m/Y'),
+      'rooms_end_date[date]' => $enddate->format('d/m/Y'),
+    );
+    $this->drupalPost('booking', $edit, 'Search for Availability');
+  }
+
+  /**
+   * @param $data
+   */
+  protected function addVariableRate($data) {
+    $this->assertFieldByName('base_price', '100.00');
+    $edit = array();
+
+    foreach($data as $key => $values) {
+      $edit = array(
+        'rooms_variable_rate[und][' . $key . '][minimum_stay]' => $values['minimum'],
+        'rooms_variable_rate[und][' . $key . '][maximum_stay]' => $values['maximum'],
+        'rooms_variable_rate[und][' . $key . '][rate_type]' => $values['type'],
+        'rooms_variable_rate[und][' . $key . '][value]' => $values['value'],
+      );
+    }
+
+    $this->drupalPost('admin/rooms/units/unit/' . $this->unit->unit_id . '/variable_rate', $edit, 'Save Prices');
+  }
+
+  /**
+   * @param $type
+   * @param $expected_variable_price
+   * @param $expected_price
+   */
+  protected function _testVariableRate($type, $expected_variable_price, $expected_price, $disable_pricing = FALSE) {
+    $this->switchVariableRate();
+
+    $data = array(
+      array(
+        'minimum' => 1,
+        'maximum' => 5,
+        'type' => $type,
+        'value' => 10
+      ),
+    );
+    $this->addVariableRate($data);
+
+    // Modify the default price declared by Price Base.
+    $startdate = new DateTime('first day of next month');
+    $enddate = new DateTime('last day of next month');
+
+    $edit = array(
+      'rooms_start_date[date]' => $startdate->format('d/m/Y'),
+      'rooms_end_date[date]' => $enddate->format('d/m/Y'),
+      'operation' => ROOMS_REPLACE,
+      'amount' => 50,
+    );
+    $this->drupalPost('admin/rooms/units/unit/' . $this->unit->unit_id . '/pricing', $edit, 'Update Unit Pricing');
+
+    if ($disable_pricing) {
+      $this->switchDefaultPricing();
+    }
+
+    $startdate = new DateTime('second day next month');
+    $enddate = new DateTime('fifth day next month');
+    // Let's create a booking.
+    $this->searchAvailability($startdate, $enddate);
+
+    $this->assertText('Base price: $ ' . $expected_variable_price);
+
+    $enddate = new DateTime('tenth day next month');
+    // Let's create a booking.
+    $this->searchAvailability($startdate, $enddate);
+
+    $this->assertText('Base price: $ ' . $expected_price);
+  }
+}
