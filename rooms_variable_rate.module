@@ -90,7 +90,6 @@ function rooms_variable_rate_variable_pricing_access($operation, $unit) {
  * Implements hook_rooms_rooms_booking_amount_before_modifiers_alter().
  */
 function rooms_variable_rate_rooms_booking_amount_before_modifiers_alter(&$price, $booking_data) {
-  debug ($price);
   if (variable_get('rooms_variable_rate_unit_' . $booking_data['unit']->type, 0) && $rates = field_get_items('rooms_unit', $booking_data['unit'], ROOMS_VARIABLE_RATE_FIELD_NAME)) {
     $period = $booking_data['start_date']->diff($booking_data['end_date'])->days + 1;
     if (variable_get('rooms_variable_rate_disable_pricing_' . $booking_data['unit']->type, 0)) {
