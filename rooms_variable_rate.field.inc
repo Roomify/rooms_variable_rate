@@ -15,7 +15,7 @@ function rooms_variable_rate_field_info() {
   return array(
     'rooms_variable_rate' => array(
       'label' => t('Rooms Variable Rate'),
-      'description' => t('Add variable rates based on booking time.'),
+      'description' => t('Add variable rates based on booking length.'),
       'settings' => array(),
       'default_widget' => 'rooms_variable_rate',
       'default_formatter' => 'rooms_variable_rate',
@@ -100,7 +100,7 @@ function rooms_variable_rate_field_validate($entity_type, $entity, $field, $inst
       if ($item['minimum_stay'] > $item['maximum_stay']) {
         $errors[$field['field_name']][$langcode][$delta][] = array(
           'error' => 'rooms_variable_rate_invalid ',
-          'message' => t("%name: Minimum booking period can\'t be greater than maximum.", array('%name' => $instance['label'])),
+          'message' => t("%name: Minimum booking period can't be greater than maximum.", array('%name' => $instance['label'])),
         );
       }
 

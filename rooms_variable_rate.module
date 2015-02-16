@@ -23,7 +23,7 @@ function rooms_variable_rate_menu() {
     'title' => 'Manage Variable Pricing',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('rooms_variable_rate_pricing_form', 4),
-    'access callback' => 'rooms_unit_access',
+    'access callback' => 'rooms_variable_rate_variable_pricing_access',
     'access arguments' => array('update pricing', 4),
     'type' => MENU_LOCAL_TASK,
     'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
@@ -33,6 +33,7 @@ function rooms_variable_rate_menu() {
 
   return $items;
 }
+
 
 /**
  * Implements hook_menu_alter().
@@ -44,13 +45,13 @@ function rooms_variable_rate_menu_alter(&$items) {
   $items['admin/rooms/units/bulk_pricing_management']['file path'] = drupal_get_path('module', 'rooms_variable_rate');
   $items['admin/rooms/units/bulk_pricing_management']['module'] = 'rooms_variable_rate';
   // Change Pricing calendar output access callback.
-  $items['rooms/units/unit/%rooms_unit/pricing/json/%/%']['access callback'] = 'rooms_variable_rate_pricing_access';
+  $items['rooms/units/unit/%rooms_unit/pricing/json/%/%']['access callback'] = 'rooms_variable_rate_default_pricing_access';
   // Change default Manage Pricing tab access callback.
-  $items['admin/rooms/units/unit/%rooms_unit/pricing']['access callback'] = 'rooms_variable_rate_pricing_access';
+  $items['admin/rooms/units/unit/%rooms_unit/pricing']['access callback'] = 'rooms_variable_rate_default_pricing_access';
 }
 
 /**
- * Specific access callback for manage pricing tab based on Rooms Variable Rate.
+ * Access callback for managing pricing tab based on Rooms Variable Rate.
  *
  * @param string $operation
  *   The operation to perform.
@@ -58,10 +59,28 @@ function rooms_variable_rate_menu_alter(&$items) {
  *   The unit to perform the operation.
  *
  * @return bool
- *   If the user has access to the or not.
+ *   If the user has access to the tab or not.
  */
-function rooms_variable_rate_pricing_access($operation, $unit) {
+function rooms_variable_rate_default_pricing_access($operation, $unit) {
   if (variable_get('rooms_variable_rate_disable_pricing_' . $unit->type, 0)) {
+    return FALSE;
+  }
+  return rooms_unit_access($operation, $unit);
+}
+
+/**
+ * Access callback for managing Variable Pricing tab.
+ *
+ * @param string $operation
+ *   The operation to perform.
+ * @param RoomsUnit $unit
+ *   The unit to perform the operation.
+ *
+ * @return bool
+ *   If the user has access to the tab or not.
+ */
+function rooms_variable_rate_variable_pricing_access($operation, $unit) {
+  if (!variable_get('rooms_variable_rate_unit_' . $unit->type, 0)) {
     return FALSE;
   }
   return rooms_unit_access($operation, $unit);
@@ -71,7 +90,8 @@ function rooms_variable_rate_pricing_access($operation, $unit) {
  * Implements hook_rooms_rooms_booking_amount_before_modifiers_alter().
  */
 function rooms_variable_rate_rooms_booking_amount_before_modifiers_alter(&$price, $booking_data) {
-  if ($rates = field_get_items('rooms_unit', $booking_data['unit'], ROOMS_VARIABLE_RATE_FIELD_NAME)) {
+  debug ($price);
+  if (variable_get('rooms_variable_rate_unit_' . $booking_data['unit']->type, 0) && $rates = field_get_items('rooms_unit', $booking_data['unit'], ROOMS_VARIABLE_RATE_FIELD_NAME)) {
     $period = $booking_data['start_date']->diff($booking_data['end_date'])->days + 1;
     if (variable_get('rooms_variable_rate_disable_pricing_' . $booking_data['unit']->type, 0)) {
       $price = $period * $booking_data['unit']->base_price;
@@ -121,16 +141,18 @@ function rooms_variable_rate_form_rooms_unit_type_form_alter(&$form, &$form_stat
 
   $form['variable_rate']['rooms_variable_rate_per_unit'] = array(
     '#type' => 'checkbox',
-    '#title' => t('Enable availability variable per unit'),
+    '#title' => t('Enable variable rate per unit'),
     '#default_value' => variable_get('rooms_variable_rate_unit_' . $unit_type->type, 0),
-    '#description' => t('This will allow you to define variable pricing rates for each unit of this type. If you disable this feature, all the stored data will be removed'),
+    '#description' => t('This will allow you to define variable pricing rates for each unit of this type. If you disable this feature, all stored data will be removed'),
   );
 
   $form['variable_rate']['rooms_variable_rate_disable_core_pricing'] = array(
     '#type' => 'checkbox',
     '#title' => t('Disable default Rooms pricing calendar'),
     '#default_value' => variable_get('rooms_variable_rate_disable_pricing_' . $unit_type->type, 0),
-    '#description' => t('This will allow you to disable the default rooms pricing calendar for units of this type. Only base price will be taken into account'),
+    '#description' => t('This will allow you to disable the default rooms
+    pricing calendar and methods for units of this type. Only the base price
+    will be taken into account'),
   );
 
   $form['#submit'][] = 'rooms_variable_rate_rooms_unit_type_form_submit';
