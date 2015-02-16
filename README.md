@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/Roomify/rooms_variable_rate.svg?branch=tests)](https://travis-ci.org/Roomify/rooms_variable_rate)
+
 INTRODUCTION
 ------------
 
