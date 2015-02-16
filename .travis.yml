@@ -1,0 +1,53 @@
+language: php
+
+php:
+  - 5.3
+  - 5.4
+  - 5.5
+
+matrix:
+  fast_finish: true
+
+mysql:
+  database: rooms_variable_rate
+  username: root
+  encoding: utf8
+
+before_install:
+  - sudo apt-get update > /dev/null
+
+install:
+  # install php packages required for running a web server from drush on php 5.3
+  - sudo apt-get install -y --force-yes php5-cgi php5-mysql
+
+  # add composer's global bin directory to the path
+  # see: https://github.com/drush-ops/drush#install---composer
+  - export PATH="$HOME/.composer/vendor/bin:$PATH"
+
+  # install drush globally
+  - composer global require drush/drush:6.*
+
+before_script:
+  # navigate out of module directory to prevent blown stack by recursive module lookup
+  - cd ../..
+
+  # create new site, stubbing sendmail path with true to prevent delivery errors and manually resolving drush path
+  - mysql -e 'create database rooms_variable_rate'
+  - php -d sendmail_path=`which true` ~/.composer/vendor/bin/drush.php --yes core-quick-drupal --profile=testing --no-server --db-url=mysql://root:@127.0.0.1/rooms_variable_rate --enable=simpletest rooms_variable_rate
+
+  # reference and enable rooms_variable_rate in build site
+  - ls -la
+  - ls -la Roomify/rooms_variable_rate/
+  - ln -s $(readlink -e $(cd -)) rooms_variable_rate/drupal/sites/all/modules/rooms_variable_rate
+  - cd rooms_variable_rate/drupal
+  # download dev version of rooms.
+  - drush --yes dl rooms-7.x-1.x-dev
+  - drush --yes dl commerce
+  - drush --yes pm-enable rooms_booking_manager
+  - drush --yes pm-enable rooms_variable_rate
+
+  # start a web server on port 8080, run in the background; wait for initialization
+  - drush runserver 127.0.0.1:8080 &
+  - until netstat -an 2>/dev/null | grep '8080.*LISTEN'; do true; done
+
+script: drush test-run 'Rooms Variable Rate' --uri=http://127.0.0.1:8080
