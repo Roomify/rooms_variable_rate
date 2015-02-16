@@ -100,7 +100,7 @@ function rooms_variable_rate_field_validate($entity_type, $entity, $field, $inst
       if ($item['minimum_stay'] > $item['maximum_stay']) {
         $errors[$field['field_name']][$langcode][$delta][] = array(
           'error' => 'rooms_variable_rate_invalid ',
-          'message' => t("%name: Minimum booking period can\'t be greater than maximum.", array('%name' => $instance['label'])),
+          'message' => t("%name: Minimum booking period can't be greater than maximum.", array('%name' => $instance['label'])),
         );
       }
 

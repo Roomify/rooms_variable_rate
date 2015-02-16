@@ -77,6 +77,7 @@ function rooms_variable_rate_pricing_form_submit($form, &$form_state) {
   $unit->changed = time();
 
   $unit->save();
+  drupal_set_message(t('Bookable unit @name saved', array('@name' => $unit->name)));
   $form_state['redirect'] = 'admin/rooms/units/unit/' . $unit->unit_id;
 }
 
