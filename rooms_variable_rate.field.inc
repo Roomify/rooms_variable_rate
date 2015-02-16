@@ -15,7 +15,7 @@ function rooms_variable_rate_field_info() {
   return array(
     'rooms_variable_rate' => array(
       'label' => t('Rooms Variable Rate'),
-      'description' => t('Add variable rates based on booking time.'),
+      'description' => t('Add variable rates based on booking length.'),
       'settings' => array(),
       'default_widget' => 'rooms_variable_rate',
       'default_formatter' => 'rooms_variable_rate',

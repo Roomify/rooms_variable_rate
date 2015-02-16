@@ -1,5 +1,5 @@
 name = Rooms Variable Rate
-description = Creates variable pricing rates for Rooms.
+description = Allows the definition of variable pricing rates based on booking length.
 core = 7.x
 
 package = Roomify
