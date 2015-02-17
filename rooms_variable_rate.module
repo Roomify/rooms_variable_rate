@@ -110,6 +110,18 @@ function rooms_variable_rate_rooms_booking_amount_before_modifiers_alter(&$price
 }
 
 /**
+ * Implements hook_features_pipe_COMPONENT_alter() for rooms_unit_type.
+ */
+function rooms_variable_rate_features_pipe_rooms_unit_type_alter(&$pipe, $data, $export) {
+  if (!empty($data) && module_exists('strongarm')) {
+    foreach ($data as $unit_type) {
+      $pipe['variable'][] = 'rooms_variable_rate_unit_' . $unit_type;
+      $pipe['variable'][] = 'rooms_variable_rate_disable_pricing_' . $unit_type;
+    }
+  }
+}
+
+/**
  * Implements hook_form_FORM_ID_alter() for rooms_unit_edit_form().
  */
 function rooms_variable_rate_form_rooms_unit_edit_form_alter(&$form, &$form_state) {
