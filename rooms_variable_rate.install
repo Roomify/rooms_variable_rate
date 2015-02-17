@@ -14,6 +14,27 @@ function rooms_variable_rate_install() {
 }
 
 /**
+ * Implements hook_uninstall().
+ */
+function rooms_variable_rate_uninstall() {
+  $variable_prefix = array(
+    'rooms_variable_rate_unit_',
+    'rooms_variable_rate_disable_pricing_',
+  );
+
+  foreach ($variable_prefix as $prefix) {
+    $vars = db_select('variable', 'v')
+      ->fields('v', array('name'))
+      ->condition('name', $prefix . '%', 'LIKE')
+      ->execute()->fetchCol();
+
+    foreach ($vars as $var) {
+      variable_del($var);
+    }
+  }
+}
+
+/**
  * Implements hook_field_schema().
  */
 function rooms_variable_rate_field_schema($field) {
