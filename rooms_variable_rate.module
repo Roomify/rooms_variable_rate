@@ -100,7 +100,7 @@ function rooms_variable_rate_rooms_booking_amount_before_modifiers_alter(&$price
     $start_date = $booking_data['start_date'];
     $end_date = $booking_data['end_date'];
     $disable_pricing = variable_get('rooms_variable_rate_disable_pricing_' . $unit->type, 0);
-    $price = rooms_variable_rate_calculate_pricing($price, $booking_data, $start_date, $end_date, $disable_pricing, $rates);
+    $price = rooms_variable_rate_calculate_pricing($price, $unit, $start_date, $end_date, $disable_pricing, $rates);
   }
 }
 
