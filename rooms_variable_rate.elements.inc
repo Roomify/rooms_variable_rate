@@ -25,7 +25,7 @@ function rooms_variable_rate_element_process($element, $form_state, $complete_fo
     '#title' => t('Minimum stay'),
     '#title_display' => 'invisible',
     '#type' => 'textfield',
-    '#field_prefix' => '<strong>' . t('If booking longer than') . '</strong>',
+    '#field_prefix' => '<strong>' . t('If booking is equal or longer than') . '</strong>',
     '#field_suffix' => t('days'),
     '#size' => 2,
     '#default_value' => isset($element['#value']['minimum_stay']) ? $element['#value']['minimum_stay'] : '',

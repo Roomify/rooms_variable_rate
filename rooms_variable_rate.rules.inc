@@ -15,7 +15,7 @@ function rooms_variable_rate_rules_event_info() {
   $events = array();
 
   $events['rooms_variable_rate_modify_rate'] = array(
-    'label' => t('Modify Rate'),
+    'label' => t('Modify Rooms Rate'),
     'group' => t('Rooms Variable Rate'),
     'variables' => array(
       'rooms_unit' => array(
