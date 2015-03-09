@@ -7,3 +7,4 @@ package = Roomify
 dependencies[] = rooms_pricing
 
 files[] = test/rooms_variable_rate.test
+files[] = rooms_variable_rate.rules.inc

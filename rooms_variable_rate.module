@@ -90,23 +90,55 @@ function rooms_variable_rate_variable_pricing_access($operation, $unit) {
  * Implements hook_rooms_rooms_booking_amount_before_modifiers_alter().
  */
 function rooms_variable_rate_rooms_booking_amount_before_modifiers_alter(&$price, $booking_data) {
-  if (variable_get('rooms_variable_rate_unit_' . $booking_data['unit']->type, 0) && $rates = field_get_items('rooms_unit', $booking_data['unit'], ROOMS_VARIABLE_RATE_FIELD_NAME)) {
-    $period = $booking_data['start_date']->diff($booking_data['end_date'])->days + 1;
-    if (variable_get('rooms_variable_rate_disable_pricing_' . $booking_data['unit']->type, 0)) {
-      $price = $period * $booking_data['unit']->base_price;
-    }
-    $period = $booking_data['start_date']->diff($booking_data['end_date'])->days + 1;
-    foreach ($rates as $rate) {
-      if ($rate['minimum_stay'] <= $period && $rate['maximum_stay'] > $period) {
-        if ($rate['rate_type'] == ROOMS_VARIABLE_RATE_DISCOUNT) {
-          $price = $price * (100 - $rate['value']) / 100;
-        }
-        else {
-          $price = $rate['value'] * $period;
-        }
+  global $rooms_variable_rate_unit_price;
+  $unit = $booking_data['unit'];
+  // Invoke the product prepare event with the shopping cart order.
+  rules_invoke_all('rooms_variable_rate_modify_rate', $booking_data['unit'], $booking_data['start_date']->getTimestamp(), $booking_data['end_date']->getTimestamp(), $price);
+  $price = isset($rooms_variable_rate_unit_price[$booking_data['unit']->unit_id]) ? $rooms_variable_rate_unit_price[$booking_data['unit']->unit_id] : $price;
+
+  if (variable_get('rooms_variable_rate_unit_' . $unit->type, 0) && $rates = field_get_items('rooms_unit', $unit, ROOMS_VARIABLE_RATE_FIELD_NAME)) {
+    $start_date = $booking_data['start_date'];
+    $end_date = $booking_data['end_date'];
+    $disable_pricing = variable_get('rooms_variable_rate_disable_pricing_' . $unit->type, 0);
+    $price = rooms_variable_rate_calculate_pricing($price, $booking_data, $start_date, $end_date, $disable_pricing, $rates);
+  }
+}
+
+/**
+ * Calculates the Rooms variable Rate given a unit and the necessary values.
+ *
+ * @param float $price
+ *   The initial price.
+ * @param RoomsUnit $unit
+ *   The unit to book.
+ * @param DateTime $start_date
+ *   The booking start date.
+ * @param DateTime $end_date
+ *   The booking end date.
+ * @param bool $disable_pricing
+ *   Boolean indicating if the default pricing management must be obviate.
+ *
+ * @param $rates
+ *
+ * @return float
+ *   The recalculated price.
+ */
+function rooms_variable_rate_calculate_pricing($price, RoomsUnit $unit, DateTime $start_date, DateTime $end_date, $disable_pricing, array $rates) {
+  $period = $start_date->diff($end_date)->days + 1;
+  if ($disable_pricing) {
+    $price = $period * $unit->base_price;
+  }
+  foreach ($rates as $rate) {
+    if ($rate['minimum_stay'] <= $period && $rate['maximum_stay'] > $period) {
+      if ($rate['rate_type'] == ROOMS_VARIABLE_RATE_DISCOUNT) {
+        $price = $price * (100 - $rate['value']) / 100;
+      }
+      else {
+        $price = $rate['value'] * $period;
       }
     }
   }
+  return $price;
 }
 
 /**
