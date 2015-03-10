@@ -124,7 +124,7 @@ class RoomsVariableRateTestCase extends DrupalWebTestCase {
       }
     }
 
-    foreach($data as $key => $values) {
+    foreach ($data as $key => $values) {
       $edit += array(
         'rooms_variable_rate[und][' . $key . '][minimum_stay]' => $values['minimum'],
         'rooms_variable_rate[und][' . $key . '][maximum_stay]' => $values['maximum'],

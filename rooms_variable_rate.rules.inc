@@ -72,13 +72,13 @@ function rooms_variable_rate_rules_action_info() {
 }
 
 function rooms_variable_rate_modify_rate_execute($rooms_variable_rate, $disable_pricing, $action_settings, $rule_state, $action, $callback_type) {
-  global $rooms_variable_rate_unit_price;
+  global $_rooms_variable_rate_unit_price;
   $unit = $rule_state->get('rooms_unit')->value();
   $start_date = new DateTime(date('Y-m-d', $rule_state->get('start_date')));
   $end_date = new DateTime(date('Y-m-d', $rule_state->get('end_date')));
   $price = $rule_state->get('price');
   $rates = array($rooms_variable_rate);
-  $rooms_variable_rate_unit_price[$unit->unit_id] = rooms_variable_rate_calculate_pricing($price, $unit, $start_date, $end_date, $disable_pricing, $rates);
+  $_rooms_variable_rate_unit_price[$unit->unit_id] = rooms_variable_rate_calculate_pricing($price, $unit, $start_date, $end_date, $disable_pricing, $rates);
 }
 
 /**
