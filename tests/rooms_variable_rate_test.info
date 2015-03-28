@@ -1,0 +1,7 @@
+name = Rooms Variable Rate Tests
+description = Rooms Variable Rate testing support module.
+core = 7.x
+
+package = Roomify
+
+dependencies[] = rooms_variable_rate
