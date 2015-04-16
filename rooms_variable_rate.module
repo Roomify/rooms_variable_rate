@@ -87,58 +87,85 @@ function rooms_variable_rate_variable_pricing_access($operation, $unit) {
 }
 
 /**
- * Implements hook_rooms_rooms_booking_amount_before_modifiers_alter().
+ * Implements hook_rooms_price_modifier_alter().
  */
-function rooms_variable_rate_rooms_booking_amount_before_modifiers_alter(&$price, $booking_data) {
-  global $rooms_variable_rate_unit_price;
-  $unit = $booking_data['unit'];
-  // Invoke the product prepare event with the shopping cart order.
-  rules_invoke_all('rooms_variable_rate_modify_rate', $booking_data['unit'], $booking_data['start_date']->getTimestamp(), $booking_data['end_date']->getTimestamp(), $price);
-  $price = isset($rooms_variable_rate_unit_price[$booking_data['unit']->unit_id]) ? $rooms_variable_rate_unit_price[$booking_data['unit']->unit_id] : $price;
+function rooms_variable_rate_rooms_price_modifier_alter(&$price_modifiers, $booking_data) {
+   global $_rooms_variable_rate_unit_price_modifiers;
 
-  if (variable_get('rooms_variable_rate_unit_' . $unit->type, 0) && $rates = field_get_items('rooms_unit', $unit, ROOMS_VARIABLE_RATE_FIELD_NAME)) {
-    $start_date = $booking_data['start_date'];
-    $end_date = $booking_data['end_date'];
-    $disable_pricing = variable_get('rooms_variable_rate_disable_pricing_' . $unit->type, 0);
-    $price = rooms_variable_rate_calculate_pricing($price, $unit, $start_date, $end_date, $disable_pricing, $rates);
+  rules_invoke_all('rooms_variable_rate_modify_rate', $booking_data['unit'], $booking_data['start_date'], $booking_data['end_date']);
+
+  if (isset($_rooms_variable_rate_unit_price_modifiers['#op_type'])) {
+    $op_type = $_rooms_variable_rate_unit_price_modifiers['#op_type'];
+    $amount = $_rooms_variable_rate_unit_price_modifiers['#amount'];
+
+    $price_modifiers['temp'] = array (
+     '#type' => ROOMS_DYNAMIC_MODIFIER,
+     '#quantity' => 1,
+     '#op_type' => $op_type,
+     '#amount' => $amount,
+    );
+  }
+
+  else {
+    return;
   }
 }
 
 /**
- * Calculates the Rooms variable Rate given a unit and the necessary values.
- *
- * @param float $price
- *   The initial price.
- * @param RoomsUnit $unit
- *   The unit to book.
- * @param DateTime $start_date
- *   The booking start date.
- * @param DateTime $end_date
- *   The booking end date.
- * @param bool $disable_pricing
- *   Boolean indicating if the default pricing management must be obviate.
- *
- * @param $rates
- *
- * @return float
- *   The recalculated price.
+ * Implements hook_rooms_string_alter().
  */
-function rooms_variable_rate_calculate_pricing($price, RoomsUnit $unit, DateTime $start_date, DateTime $end_date, $disable_pricing, array $rates) {
-  $period = $start_date->diff($end_date)->days + 1;
-  if ($disable_pricing) {
-    $price = $period * $unit->base_price;
-  }
-  foreach ($rates as $rate) {
-    if ($rate['minimum_stay'] <= $period && $rate['maximum_stay'] > $period) {
-      if ($rate['rate_type'] == ROOMS_VARIABLE_RATE_DISCOUNT) {
-        $price = $price * (100 - $rate['value']) / 100;
+function rooms_variable_rate_rooms_string_alter(&$string_suggestions, $context) {
+  $data = $context['#data'];
+
+  // Get the default currency symbol.
+  $c = commerce_currency_load();
+  $currency = $c['symbol'];
+
+  if ($context['#component'] == 'rooms_booking_manager' && $context['#purpose'] == 'rooms_create_line_item') {
+    $unit = $data['unit'];
+    if (isset($unit['price_log']['modifiers']['temp'])) {
+      if ($unit['price_log']['modifiers']['temp']['dynamic_modifier']['modifier']['#op_type'] == ROOMS_DECREASE) {
+        $modifier = $unit['price_log']['modifiers']['temp']['dynamic_modifier'];
+        $discount = $modifier['modifier']['#amount'];
+        $before_discount = $modifier['pre'];
+        $string_suggestions[0] .= ' ' . t('(Includes <strong>!value% discount</strong> for booking length)',
+            array('!value' => $discount, '@currency' => $currency, '@before_discount' =>  $before_discount));
       }
-      else {
-        $price = $rate['value'] * $period;
+    }
+    if (isset($unit['price_log']['modifiers']['temp'])) {
+      if ($unit['price_log']['modifiers']['temp']['dynamic_modifier']['modifier']['#op_type'] == 'replace') {
+        $modifier = $unit['price_log']['modifiers']['temp']['dynamic_modifier'];
+        $discount = $modifier['modifier']['#amount'];
+        $before_discount = $modifier['pre'];
+        $string_suggestions[0] .= ' ' . t('Includes (@currency!value discount for booking length)',
+            array('!value' => $discount, '@currency' => $currency, '@before_discount' =>  $before_discount));
       }
     }
   }
-  return $price;
+  elseif (($context['#component'] == 'book_unit_form_builder' || $context['#component'] == 'units_per_type_form')  && $context['#purpose'] == 'display_base_price') {
+    // The unit level we are dealing with
+    $units = $data['units'][$data['price']];
+    // Pop a unit out to check the pricing level
+    $unit = array_shift($units);
+    if (isset($unit['price_log']['modifiers']['temp'])) {
+      if ($unit['price_log']['modifiers']['temp']['dynamic_modifier']['modifier']['#op_type'] == ROOMS_DECREASE) {
+        $modifier = $unit['price_log']['modifiers']['temp']['dynamic_modifier'];
+        $discount = $modifier['modifier']['#amount'];
+        $before_discount = $modifier['pre'];
+        $string_suggestions[0] .= ' ' . t('(Includes <strong>!value% discount</strong> for booking length)',
+            array('!value' => $discount, '@currency' => $currency, '@before_discount' =>  $before_discount));
+      }
+    }
+    if (isset($unit['price_log']['modifiers']['temp'])) {
+      if ($unit['price_log']['modifiers']['temp']['dynamic_modifier']['modifier']['#op_type'] == 'replace') {
+        $modifier = $unit['price_log']['modifiers']['temp']['dynamic_modifier'];
+        $discount = $modifier['modifier']['#amount'];
+        $before_discount = $modifier['pre'];
+        $string_suggestions[0] .= ' ' . t('Includes (@currency!value discount for booking length)',
+            array('!value' => $discount, '@currency' => $currency, '@before_discount' =>  $before_discount));
+      }
+    }
+  }
 }
 
 /**

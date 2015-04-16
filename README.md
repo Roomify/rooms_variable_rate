@@ -30,12 +30,18 @@ Rooms Variable Rate requires:
 CONFIGURATION
 -------------
 
-After activating the module visit the Rooms unit type configuration page for
-the type of units you want to activate variable rates.
+After activating the module there are two ways to activate variable rates.
 
-You can activate variable rate for all units of a certain type. When enabled, a
-new tab "Manage Variable Pricing" will appear in units of that type. Using this
-tab, unit owners will be able to define Variable Rate periods.
+1. Activate variable rates for a specific unit: Visit the Rooms Unit Type
+configuration page for the type of units you want to activate variable rates
+for. When enabled, a new tab "Manage Variable Pricing" will appear in units of
+that type. Using this tab, unit owners will be able to define Variable Rate
+periods.
+
+2. Activate variables rates globally via a Rule: Create a rule with the action
+modify rooms rate on the event modify rooms rate. Based on the conditions you
+set you can target specific units or avoid units that have variable rates defined
+at the entity level.
 
 You can also choose to enable or disable the default Rooms Pricing Calendar. This
 will have the "Manage Pricing" tab and pricing calendar and the base price for a
@@ -43,6 +49,7 @@ bookable unit will be the starting point for price calculations.
 
 If the Pricing Calendar is not disabled then it will providing the pricing
 starting point.
+
 
 AUTHORS / CREDITS
 -----------------
