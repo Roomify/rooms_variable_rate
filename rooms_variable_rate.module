@@ -128,7 +128,7 @@ function rooms_variable_rate_rooms_string_alter(&$string_suggestions, $context) 
         $modifier = $unit['price_log']['modifiers']['temp']['dynamic_modifier'];
         $discount = $modifier['modifier']['#amount'];
         $before_discount = $modifier['pre'];
-        $string_suggestions[0] .= ' ' . t('(Includes <strong>!value% discount</strong> for booking length)',
+        $string_suggestions[0] .= ' ' . t('(Includes !value% discount for booking length)',
             array('!value' => $discount, '@currency' => $currency, '@before_discount' =>  $before_discount));
       }
     }
