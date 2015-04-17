@@ -135,8 +135,9 @@ function rooms_variable_rate_rooms_string_alter(&$string_suggestions, $context) 
     if (isset($unit['price_log']['modifiers']['temp'])) {
       if ($unit['price_log']['modifiers']['temp']['dynamic_modifier']['modifier']['#op_type'] == 'replace') {
         $modifier = $unit['price_log']['modifiers']['temp']['dynamic_modifier'];
-        $discount = $modifier['modifier']['#amount'];
+        $savings = $modifier['modifier']['#amount'];
         $before_discount = $modifier['pre'];
+        $discount = $before_discount - $savings;
         $string_suggestions[0] .= ' ' . t('(Includes @currency!value discount for booking length)',
             array('!value' => $discount, '@currency' => $currency, '@before_discount' =>  $before_discount));
       }
@@ -159,8 +160,9 @@ function rooms_variable_rate_rooms_string_alter(&$string_suggestions, $context) 
     if (isset($unit['price_log']['modifiers']['temp'])) {
       if ($unit['price_log']['modifiers']['temp']['dynamic_modifier']['modifier']['#op_type'] == 'replace') {
         $modifier = $unit['price_log']['modifiers']['temp']['dynamic_modifier'];
-        $discount = $modifier['modifier']['#amount'];
+        $savings = $modifier['modifier']['#amount'];
         $before_discount = $modifier['pre'];
+        $discount = $before_discount - $savings;
         $string_suggestions[0] .= ' ' . t('(Includes @currency!value discount for booking length)',
             array('!value' => $discount, '@currency' => $currency, '@before_discount' =>  $before_discount));
       }
