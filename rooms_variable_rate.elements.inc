@@ -53,6 +53,8 @@ function rooms_variable_rate_length_element_process($element, $form_state, $comp
     '#weight' => 1,
   );
 
+  $element['#element_validate'] = array('rooms_variable_rate_element_validate');
+
   return $element;
 }
 
@@ -155,13 +157,16 @@ function rooms_variable_rate_element_validate($element, &$form_state) {
   if (is_array($value)) {
     $name = empty($element['#title']) ? t('Variable Rate') : $element['#title'];
     if (is_array($value)) {
-      if ($value['minimum_stay'] > $value['maximum_stay']) {
-        form_error($element, t("%name: Minimum booking period can't be greater than maximum.", array('%name' => $name)));
+      if (isset($value['minimum_stay'])) {
+        if ($value['minimum_stay'] > $value['maximum_stay']) {
+          form_error($element, t("%name: Minimum booking period can't be greater than maximum.", array('%name' => $name)));
+        }
       }
     }
-
-    if ($value['rate_type'] == ROOMS_VARIABLE_RATE_DISCOUNT && $value['value'] > 100) {
-      form_error($element, t("%name: Percentage can't be greater than 100.", array('%name' => $name)));
+    if (isset($value['rate_type'])) {
+      if ($value['rate_type'] == ROOMS_VARIABLE_RATE_DISCOUNT && $value['value'] > 100) {
+        form_error($element, t("%name: Percentage can't be greater than 100.", array('%name' => $name)));
+      }
     }
   }
 }
